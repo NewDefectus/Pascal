@@ -37,12 +37,13 @@ function createTriangle()
 		let line = document.createElement("div");
 		line.style.marginLeft = 4 * (height - y) + "px";
 		
-		prevLine = (y==0) ? [0,0] : squares[y - 1];
+		let prevLine = (y==0) ? [0,0] : squares[y - 1];
 		
 		squares[y] = [];
 		for(x = 0; x < y; x++)
 		{
 			let cell = document.createElement("div");
+			let color = 0;
 			switch(x)
 			{
 			case 0:
@@ -72,7 +73,7 @@ function colorTriangle(equation)
 	for(y = 0; y < squares.length; y++)
 		for(x = 0; x < squares[y].length; x++)
 		{
-			cell = squares[y][x];
+			let cell = squares[y][x];
 			cell.style.backgroundColor = applyColor(cell.value, equation);
 		}
 }
