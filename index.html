@@ -74,14 +74,14 @@ function colorTriangle(equation)
 		for(x = 0; x < squares[y].length; x++)
 		{
 			let cell = squares[y][x];
+			cell.style.backgroundColor = "#000000";
 			cell.style.backgroundColor = applyColor(cell.value, equation);
 		}
 }
 
 function applyColor(color, equation)
 {
-	var currentColor = color;
-	return eval(equation.replace(/#/g, "currentColor"));
+	return new Function('currentColor', 'hexify', 'return (' + equation.replace(/#/g, 'currentColor') + ')')(color, hexify);
 	//hexify(#)
 	//hexify(Math.pow(#, 1 / #))
 	//hexify(Math.random()*#)
