@@ -70,21 +70,14 @@ function createTriangle()
 
 function colorTriangle(equation)
 {
-	for(y = 0; y < squares.length; y++)
-		for(x = 0; x < squares[y].length; x++)
+	let colorFunc = new Function('currentColor', 'hexify', 'return (' + equation.replace(/#/g, 'currentColor') + ')');
+	for(let y = 0; y < squares.length; y++)
+		for(let x = 0; x < squares[y].length; x++)
 		{
 			let cell = squares[y][x];
 			cell.style.backgroundColor = "#000000";
-			cell.style.backgroundColor = applyColor(cell.value, equation);
+			cell.style.backgroundColor = "#" + colorFunc(cell.value, hexify);
 		}
-}
-
-function applyColor(color, equation)
-{
-	return new Function('currentColor', 'hexify', 'return (' + equation.replace(/#/g, 'currentColor') + ')')(color, hexify);
-	//hexify(#)
-	//hexify(Math.pow(#, 1 / #))
-	//hexify(Math.random()*#)
 }
 
 function hexify(num, digits)
