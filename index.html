@@ -1,0 +1,105 @@
+"use strict";
+<head>
+<title>Pascal's Triangle</title>
+
+<style>
+.pixel { float: left; width: 8px; height: 8px }
+</style>
+</head>
+
+<body style="background-color: #000000">
+
+
+<div id="triangle" style="line-height: 8px; display: inline-block"></div>
+
+<div id="commandLine" style="float: right">
+<textarea id="equation" style="font-size: 1.5em; width: 380px; height: 30px; resize: none" rows=1></textarea>
+</div>
+
+
+</body>
+
+<script>
+var height = 128;
+var squares = [];
+var command = document.getElementById("equation");
+command.addEventListener("keydown", function() { setTimeout(runEquation, 1); });
+
+createTriangle();
+
+function createTriangle()
+{
+	var triangle = document.getElementById("triangle");
+	triangle.style.width = height * 8 + "px";
+	triangle.style.height = height * 8 + "px";
+	
+	for(y = 0; y <= height; y++)
+	{
+		let line = document.createElement("div");
+		line.style.marginLeft = 4 * (height - y) + "px";
+		
+		let prevLine = (y==0) ? [0,0] : squares[y - 1];
+		
+		squares[y] = [];
+		for(x = 0; x < y; x++)
+		{
+			let cell = document.createElement("div");
+			let color = 0;
+			switch(x)
+			{
+			case 0:
+				color = 1;
+				break;
+			case y - 1:
+				color = prevLine[x - 1].value;
+				break;
+			default:
+				color = prevLine[x - 1].value + prevLine[x].value;
+				break;
+			}
+			cell.value = color;
+			squares[y][x] = cell;
+			cell.className = "pixel";
+			line.appendChild(cell);
+		}
+		triangle.appendChild(line);
+		triangle.appendChild(document.createElement("br"));
+	}
+	
+	colorTriangle("hexify(#)");
+}
+
+function colorTriangle(equation)
+{
+	for(y = 0; y < squares.length; y++)
+		for(x = 0; x < squares[y].length; x++)
+		{
+			let cell = squares[y][x];
+			cell.style.backgroundColor = applyColor(cell.value, equation);
+		}
+}
+
+function applyColor(color, equation)
+{
+	var currentColor = color;
+	return eval(equation.replace(/#/g, "currentColor"));
+	//hexify(#)
+	//hexify(Math.pow(#, 1 / #))
+	//hexify(Math.random()*#)
+}
+
+function hexify(num, digits)
+{
+	if(!digits) digits = 6;
+	return ("0".repeat(digits) + num.toString(16)).slice(-digits);
+}
+
+function runEquation()
+{
+	if(command.value.includes("\n"))
+	{
+		command.value = command.value.replace(/\n/g, "");
+		colorTriangle(command.value);
+	}
+}
+</script>
