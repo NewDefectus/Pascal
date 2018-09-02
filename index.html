@@ -90,7 +90,7 @@ function applyColor(color, equation)
 function hexify(num, digits)
 {
 	if(!digits) digits = 6;
-	return ("0".repeat(digits) + num.toString(16)).slice(-digits);
+	return ("0".repeat(digits) + Math.round(num).toString(16)).slice(-digits);
 }
 
 function runEquation()
