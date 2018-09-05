@@ -1,25 +1,22 @@
 <head>
 <title>Pascal's Triangle</title>
-
-<style>
-.pixel { float: left; width: 8px; height: 8px }
-</style>
 </head>
 
-<body style="background-color: #000000">
+<body id="body" style="background-color: #000000; margin: 0">
 
 
-<div id="triangle" style="line-height: 8px; display: inline-block"></div>
-
-<div id="commandLine" style="float: right">
-<textarea id="equation" style="font-size: 1.5em; width: 380px; height: 30px; resize: none" rows=1></textarea>
+<div id="commandLine" style="position: fixed">
+<textarea id="equation" style="font-size: 1.5em; width: 780px; height: 30px; resize: none; overflow: hidden" rows=1></textarea>
 </div>
+<canvas id="triangle" style="padding: 0; margin: auto; display: block"></canvas>
 
 
 </body>
 
 <script>
-var height = 128;
+let settings = (new URL(window.location.href)).searchParams;
+
+var height = parseInt(settings.get("height")) || 128;
 var squares = [];
 var command = document.getElementById("equation");
 var repeat = false;
@@ -27,73 +24,67 @@ var repeatIndex = 0;
 var repeatCycle = 0;
 var repeatInterval;
 var currentEquation = "";
-var rate = 5;
+var rate = parseInt(settings.get("rate")) || 10;
 command.addEventListener("keydown", function() { setTimeout(runEquation, 1); });
+
+var canvas = document.getElementById("triangle");
+var ctx = canvas.getContext("2d");
+var squareSize = 1024 / height;
 
 createTriangle();
 
 function createTriangle()
 {
-	var triangle = document.getElementById("triangle");
-	triangle.style.width = height * 8 + "px";
-	triangle.style.height = height * 8 + "px";
-	
-	for(y = 0; y <= height; y++)
+	canvas.width = 1024;
+	canvas.height = 1024;
+	for(let y = 0; y <= height; y++)
 	{
-		let line = document.createElement("div");
-		line.style.marginLeft = 4 * (height - y) + "px";
+		let margin = squareSize / 2 * (height - y);
 		
-		let prevLine = (y==0) ? [0,0] : squares[y - 1];
+		let prevLine = (y!=0) ? squares[y - 1] : [];
 		
 		squares[y] = [];
-		for(x = 0; x < y; x++)
+		for(let x = 0; x < y; x++)
 		{
-			let cell = document.createElement("div");
-			let color = 0;
-			let smallColor = 0;
+			let square = { x: margin + x * squareSize, y: y * squareSize, value: 0, smallValue: 0 };
 			switch(x)
 			{
 			case 0:
-				color = 1;
-				smallColor = 1;
+				square.value = square.smallValue = 1;
 				break;
 			case y - 1:
-				color = prevLine[x - 1].value;
-				smallColor = prevLine[x - 1].value;
+				square.value = square.smallValue = prevLine[x - 1].value;
 				break;
 			default:
-				color = prevLine[x - 1].value + prevLine[x].value;
-				smallColor = (prevLine[x - 1].smallValue + prevLine[x].smallValue) % 2**24;
+				square.value = prevLine[x - 1].value + prevLine[x].value;
+				square.smallValue = (prevLine[x - 1].smallValue + prevLine[x].smallValue) % 2**24;
 				break;
 			}
-			cell.value = color;
-			cell.smallValue = smallColor;
-			squares[y][x] = cell;
-			cell.className = "pixel";
-			line.appendChild(cell);
+			squares[y][x] = square;
 		}
-		triangle.appendChild(line);
-		triangle.appendChild(document.createElement("br"));
 	}
+	window.addEventListener("load", resize);
+	window.addEventListener("resize", resize);
 	
 	colorTriangle("hexify(#)");
 }
 
 function colorTriangle(equation)
 {
-	let colorFunc = new Function('colorValue', 'smallColorValue', 'return (' + equation.replace('#!', 'colorValue').replace('#', 'smallColorValue').replace('@', 'repeatCycle') + ')');
+	let colorFunc = new Function('colorValue', 'smallColorValue', 'return (' + equation.replace(/#!/g, 'colorValue').replace(/#/g, 'smallColorValue').replace(/@/g, 'repeatCycle') + ')');
+	ctx.clearRect(0, 0, 1024, 1024);
 	for(let y = 0; y < squares.length; y++)
 		for(let x = 0; x < squares[y].length; x++)
 		{
-			let cell = squares[y][x];
-			cell.style.backgroundColor = "#000000";
-			cell.style.backgroundColor = "#" + colorFunc(cell.value, cell.smallValue);
+			let square = squares[y][x];
+			ctx.fillStyle = "#" + colorFunc(square.value, square.smallValue);
+			ctx.fillRect(square.x, square.y, squareSize, squareSize);
 		}
 }
 
 function hexify(num, digits, withoutZeros)
 {
-	if(!digits) digits = 6;
+	digits = digits || 6;
 	if(withoutZeros)	return Math.round(num).toString(16).slice(-digits);
 	else			return ("0".repeat(digits) + Math.round(num).toString(16)).slice(-digits);
 }
@@ -123,5 +114,18 @@ function repeatColoring()
 		repeatIndex = 0;
 		colorTriangle(currentEquation);
 	}
+}
+
+function resize()
+{
+	width = window.innerWidth;
+	height = window.innerHeight;
+	
+	command.style.width = width * 65 / 154;
+	command.style.height = height * 15 / 524;
+	command.style.marginTop = width / 231;
+	command.style.marginLeft = height / 131;
+	
+	
 }
 </script>
