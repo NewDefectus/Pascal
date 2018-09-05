@@ -22,6 +22,12 @@
 var height = 128;
 var squares = [];
 var command = document.getElementById("equation");
+var repeat = false;
+var repeatIndex = 0;
+var repeatCycle = 0;
+var repeatInterval;
+var currentEquation = "";
+var rate = 5;
 command.addEventListener("keydown", function() { setTimeout(runEquation, 1); });
 
 createTriangle();
@@ -44,19 +50,24 @@ function createTriangle()
 		{
 			let cell = document.createElement("div");
 			let color = 0;
+			let smallColor = 0;
 			switch(x)
 			{
 			case 0:
 				color = 1;
+				smallColor = 1;
 				break;
 			case y - 1:
 				color = prevLine[x - 1].value;
+				smallColor = prevLine[x - 1].value;
 				break;
 			default:
 				color = prevLine[x - 1].value + prevLine[x].value;
+				smallColor = (prevLine[x - 1].smallValue + prevLine[x].smallValue) % 2**24;
 				break;
 			}
 			cell.value = color;
+			cell.smallValue = smallColor;
 			squares[y][x] = cell;
 			cell.className = "pixel";
 			line.appendChild(cell);
@@ -70,20 +81,21 @@ function createTriangle()
 
 function colorTriangle(equation)
 {
-	let colorFunc = new Function('currentColor', 'hexify', 'return (' + equation.replace(/#/g, 'currentColor') + ')');
+	let colorFunc = new Function('colorValue', 'smallColorValue', 'return (' + equation.replace('#!', 'colorValue').replace('#', 'smallColorValue').replace('@', 'repeatCycle') + ')');
 	for(let y = 0; y < squares.length; y++)
 		for(let x = 0; x < squares[y].length; x++)
 		{
 			let cell = squares[y][x];
 			cell.style.backgroundColor = "#000000";
-			cell.style.backgroundColor = "#" + colorFunc(cell.value, hexify);
+			cell.style.backgroundColor = "#" + colorFunc(cell.value, cell.smallValue);
 		}
 }
 
-function hexify(num, digits)
+function hexify(num, digits, withoutZeros)
 {
 	if(!digits) digits = 6;
-	return ("0".repeat(digits) + Math.round(num).toString(16)).slice(-digits);
+	if(withoutZeros)	return Math.round(num).toString(16).slice(-digits);
+	else			return ("0".repeat(digits) + Math.round(num).toString(16)).slice(-digits);
 }
 
 function runEquation()
@@ -91,7 +103,25 @@ function runEquation()
 	if(command.value.includes("\n"))
 	{
 		command.value = command.value.replace(/\n/g, "");
-		colorTriangle(command.value);
+		currentEquation = command.value;
+		
+		repeat = currentEquation.includes('@');
+		repeatIndex = 0;
+		repeatCycle = 0;
+		if(repeat)	repeatInterval = setInterval(repeatColoring, 10);
+		else		clearInterval(repeatInterval);
+		colorTriangle(currentEquation);
+	}
+}
+
+function repeatColoring()
+{
+	repeatIndex++;
+	if(repeatIndex >= rate)
+	{
+		repeatCycle += repeatIndex / 100;
+		repeatIndex = 0;
+		colorTriangle(currentEquation);
 	}
 }
 </script>
