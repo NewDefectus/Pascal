@@ -1,14 +1,45 @@
 <head>
 <title>Pascal's Triangle</title>
+
+<style>
+#equation:focus
+{
+	outline: 0 !important;
+}
+#tooltip
+{
+	position: fixed;
+	display: none;
+	width: 500px;
+	height: 80px;
+	padding: 20px;
+	font-family: arial;
+	border: 8px solid white;
+	background-color: white;
+}
+</style>
 </head>
+
+<div style="position: relative; overflow: hidden">
+<span id="tooltip">
+<div style="text-align: center; line-height: 0.75em">
+<span id="tooltip-addition" style="font-size: 1.15em; color: gray; overflow: hidden"></span>
+<br><br>
+<span id="tooltip-number" style="font-size: 1.5em"></span>
+<br><br><br>
+<span id="tooltip-color" style="color: #777777"></span>
+</div>
+</span>
+</div>
 
 <body id="body" style="background-color: #000000; margin: 0">
 
 
 <div id="commandLine" style="position: fixed">
-<textarea id="equation" style="font-size: 1.5em; width: 780px; height: 30px; resize: none; overflow: hidden" rows=1></textarea>
+<div id="equation" contenteditable style="box-sizing: border-box; font-family: monospace; background-color: white; white-space: pre-wrap; word-wrap: break-word; -webkit-rtl-ordering: logical" onkeydown="runEquation(event)" onfocus="commandFocused = true" onblur="commandFocused = false"></div>
 </div>
-<canvas id="triangle" style="padding: 0; margin: auto; display: block"></canvas>
+<canvas id="triangle" style="padding: 0; margin: auto; display: block" onmousemove="displayNumber(event)" onmouseleave="tooltip.style.display='none'">
+</canvas>
 
 
 </body>
@@ -25,11 +56,28 @@ var repeatCycle = 0;
 var repeatInterval;
 var currentEquation = "";
 var rate = parseInt(settings.get("rate")) || 10;
-command.addEventListener("keydown", function() { setTimeout(runEquation, 1); });
-
 var canvas = document.getElementById("triangle");
 var ctx = canvas.getContext("2d");
 var squareSize = 1024 / height;
+var commandFocused = false;
+var tooltip = document.getElementById("tooltip");
+tooltip.addition = document.getElementById("tooltip-addition");
+tooltip.number = document.getElementById("tooltip-number");
+tooltip.color = document.getElementById("tooltip-color");
+
+setupCommandLine();
+
+function setupCommandLine()
+{
+	command.style.width = 100 * 780 / 1848 + "vw";
+	command.style.minHeight = 100 * 32 / 1048 + "vh";
+	command.style.marginTop = 100 * 8 / 1848 + "vw";
+	command.style.marginLeft = 100 * 8 / 1048 + "vh";
+	command.style.paddingTop = 100 * 2 / 1848 + "vw";
+	command.style.paddingLeft = 100 * 2 / 1048 + "vh";
+	command.style.border = 100 * 1 / 1048 + "vmin solid #A9A9A9";
+	command.style.fontSize = 100 * 24 / 1048 + "vh";
+}
 
 createTriangle();
 
@@ -46,7 +94,7 @@ function createTriangle()
 		squares[y] = [];
 		for(let x = 0; x < y; x++)
 		{
-			let square = { x: margin + x * squareSize, y: y * squareSize, value: 0, smallValue: 0 };
+			let square = { x: margin + x * squareSize, y: y * squareSize, value: 0, smallValue: 0, color: "" };
 			switch(x)
 			{
 			case 0:
@@ -63,8 +111,6 @@ function createTriangle()
 			squares[y][x] = square;
 		}
 	}
-	window.addEventListener("load", resize);
-	window.addEventListener("resize", resize);
 	
 	colorTriangle("hexify(#)");
 }
@@ -77,24 +123,26 @@ function colorTriangle(equation)
 		for(let x = 0; x < squares[y].length; x++)
 		{
 			let square = squares[y][x];
-			ctx.fillStyle = "#" + colorFunc(square.value, square.smallValue);
+			square.color = colorFunc(square.value, square.smallValue);
+			ctx.fillStyle = "#" + square.color;
 			ctx.fillRect(square.x, square.y, squareSize, squareSize);
 		}
 }
 
 function hexify(num, digits, withoutZeros)
 {
+	num = Math.round(num) % 2**24;
 	digits = digits || 6;
-	if(withoutZeros)	return Math.round(num).toString(16).slice(-digits);
-	else			return ("0".repeat(digits) + Math.round(num).toString(16)).slice(-digits);
+	if(withoutZeros)	return num.toString(16).slice(-digits);
+	else			return ("0".repeat(digits) + num.toString(16)).slice(-digits);
 }
 
-function runEquation()
+function runEquation(event)
 {
-	if(command.value.includes("\n"))
+	if(commandFocused && event.key == "Enter")
 	{
-		command.value = command.value.replace(/\n/g, "");
-		currentEquation = command.value;
+		event.preventDefault();
+		currentEquation = command.innerHTML;
 		
 		repeat = currentEquation.includes('@');
 		repeatIndex = 0;
@@ -116,16 +164,45 @@ function repeatColoring()
 	}
 }
 
-function resize()
+function displayNumber(event)
 {
-	width = window.innerWidth;
-	height = window.innerHeight;
+	let y = event.offsetY / squareSize;
+	let x = event.offsetX / squareSize - (height - y) / 2 - 0.34;
 	
-	command.style.width = width * 65 / 154;
-	command.style.height = height * 15 / 524;
-	command.style.marginTop = width / 231;
-	command.style.marginLeft = height / 131;
+	x = parseInt(x);
+	y = parseInt(y);
 	
-	
+	if(squares[y][x])
+	{
+		let square = squares[y][x];
+		let parentSquareA = squares[y - 1][x - 1] || { value: 0 };
+		let parentSquareB = squares[y - 1][x] || { value: 0 };
+		
+		let off = offscreen(event.clientX, event.clientY);
+		
+		tooltip.style.display = "block";
+		tooltip.style.borderColor = square.color;
+		tooltip.style.top = (event.clientY + ((off.y) ? -146 : 20)) + 'px';
+		tooltip.style.left = (event.clientX + ((off.x) ? -566 : 20)) + 'px';
+		
+		let firstNumber = parentSquareA.value;//.toString(10).replace("e+", " × 10<sup>") + (parentSquareA.value.toString(10).includes("e+")) ? "</sup>" : "";
+		let secondNumber = parentSquareB.value;//.toString(10).replace("e+", " × 10<sup>") + (parentSquareA.value.toString(10).includes("e+")) ? "</sup>" : "";
+		
+		tooltip.addition.innerHTML = (y==1) ? "" : firstNumber + " + " + secondNumber + " =";
+		tooltip.number.innerHTML = square.value;
+		tooltip.color.innerHTML = "#" + square.color;
+	}
+	else
+	{
+		tooltip.style.display = "none";
+	}
+}
+
+function offscreen(x, y)
+{
+	edgeX = x + 20 + tooltip.offsetWidth;
+	edgeY = y + 20 + tooltip.offsetHeight;
+	console.log(edgeX);
+	return { x: (edgeX > window.innerWidth), y: (edgeY > window.innerHeight) };
 }
 </script>
