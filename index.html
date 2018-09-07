@@ -2,6 +2,16 @@
 <title>Pascal's Triangle</title>
 
 <style>
+#equation
+{
+	width: 75vmin;
+	min-height: 3vmin;
+	padding: 0.2vmin;
+	border: 0.1vmin solid #A9A9A9;
+	font-size: 2vmin;
+	margin-top: 0.7vmin;
+	margin-left: 0.7vmin;
+}
 #equation:focus
 {
 	outline: 0 !important;
@@ -10,29 +20,31 @@
 {
 	position: fixed;
 	display: none;
-	width: 500px;
-	height: 80px;
-	padding: 20px;
+	width: 50vmin;
+	height: 10vmin;
+	padding: 2vmin;
 	font-family: arial;
-	border: 8px solid white;
+	border: 1vmin solid white;
 	background-color: white;
+	text-align: center;
+	line-height: 0.9em;
 }
 </style>
 </head>
 
-<div style="position: relative; overflow: hidden">
+<div style="position: relative; overflow: hidden; font-size: 1.5vmin">
 <span id="tooltip">
-<div style="text-align: center; line-height: 0.75em">
 <span id="tooltip-addition" style="font-size: 1.15em; color: gray; overflow: hidden"></span>
-<br><br>
+<br>
 <span id="tooltip-number" style="font-size: 1.5em"></span>
-<br><br><br>
+<br><br>
 <span id="tooltip-color" style="color: #777777"></span>
-</div>
+<br><br>
+<span id="tooltip-coords" style="font-size: 0.8em; color: #777777"></span>
 </span>
 </div>
 
-<body id="body" style="background-color: #000000; margin: 0">
+<body id="body" style="background-color: #000000; margin: 0; overflow: hidden">
 
 
 <div id="commandLine" style="position: fixed">
@@ -64,20 +76,7 @@ var tooltip = document.getElementById("tooltip");
 tooltip.addition = document.getElementById("tooltip-addition");
 tooltip.number = document.getElementById("tooltip-number");
 tooltip.color = document.getElementById("tooltip-color");
-
-setupCommandLine();
-
-function setupCommandLine()
-{
-	command.style.width = 100 * 780 / 1848 + "vw";
-	command.style.minHeight = 100 * 32 / 1048 + "vh";
-	command.style.marginTop = 100 * 8 / 1848 + "vw";
-	command.style.marginLeft = 100 * 8 / 1048 + "vh";
-	command.style.paddingTop = 100 * 2 / 1848 + "vw";
-	command.style.paddingLeft = 100 * 2 / 1048 + "vh";
-	command.style.border = 100 * 1 / 1048 + "vmin solid #A9A9A9";
-	command.style.fontSize = 100 * 24 / 1048 + "vh";
-}
+tooltip.coords = document.getElementById("tooltip-coords");
 
 createTriangle();
 
@@ -167,7 +166,7 @@ function repeatColoring()
 function displayNumber(event)
 {
 	let y = event.offsetY / squareSize;
-	let x = event.offsetX / squareSize - (height - y) / 2 - 0.34;
+	let x = event.offsetX / squareSize - (height - y) / 2 - 1/3;
 	
 	x = parseInt(x);
 	y = parseInt(y);
@@ -178,19 +177,18 @@ function displayNumber(event)
 		let parentSquareA = squares[y - 1][x - 1] || { value: 0 };
 		let parentSquareB = squares[y - 1][x] || { value: 0 };
 		
-		let off = offscreen(event.clientX, event.clientY);
+		let offScreenY = (event.clientY - tooltip.offsetHeight / 2 - 110 * window.innerHeight / 1048 < 0);
 		
 		tooltip.style.display = "block";
 		tooltip.style.borderColor = square.color;
-		tooltip.style.top = (event.clientY + ((off.y) ? -146 : 20)) + 'px';
-		tooltip.style.left = (event.clientX + ((off.x) ? -566 : 20)) + 'px';
+		tooltip.style.top = event.clientY - tooltip.offsetHeight / 2 + ((offScreenY) ? 110 : -110) * window.innerHeight / 1048 + 'px';
+		tooltip.style.left = event.clientX - tooltip.offsetWidth / 2 + 'px';
 		
-		let firstNumber = parentSquareA.value;//.toString(10).replace("e+", " × 10<sup>") + (parentSquareA.value.toString(10).includes("e+")) ? "</sup>" : "";
-		let secondNumber = parentSquareB.value;//.toString(10).replace("e+", " × 10<sup>") + (parentSquareA.value.toString(10).includes("e+")) ? "</sup>" : "";
-		
-		tooltip.addition.innerHTML = (y==1) ? "" : firstNumber + " + " + secondNumber + " =";
-		tooltip.number.innerHTML = square.value;
+		tooltip.addition.innerHTML = "<sup><sup> </sup></sup>" + ((y==1) ? " " : convertToString(parentSquareA.value) + " + " + convertToString(parentSquareB.value) + " =") + "<sup><sup> </sup></sup>";
+		let numberStr = convertToString(square.value);
+		tooltip.number.innerHTML = "<sup><sup> </sup></sup>" + numberStr + ((numberStr.includes("∞")) ? " (≥2<sup>2<sup>10</sup></sup>)" : "") + "<sup><sup> </sup></sup>";
 		tooltip.color.innerHTML = "#" + square.color;
+		tooltip.coords.innerHTML = "Row " + (x + 0.5 + (height - y) / 2) + ", column " + y;
 	}
 	else
 	{
@@ -198,11 +196,9 @@ function displayNumber(event)
 	}
 }
 
-function offscreen(x, y)
+function convertToString(number)
 {
-	edgeX = x + 20 + tooltip.offsetWidth;
-	edgeY = y + 20 + tooltip.offsetHeight;
-	console.log(edgeX);
-	return { x: (edgeX > window.innerWidth), y: (edgeY > window.innerHeight) };
+	let string = number.toString();
+	return string.replace("e+", "×10<sup>").replace("Infinity", "∞") + ((string.includes("e+")) ? "</sup>" : "");
 }
 </script>
